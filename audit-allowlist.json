@@ -1,0 +1,46 @@
+{
+  "$comment": [
+    "Explicitly accepted npm audit findings. Consumed by scripts/audit.mjs.",
+    "",
+    "RULES:",
+    "  - The audit threshold stays at --audit-level=high. Never lower it to make a",
+    "    finding disappear; add a reviewed entry here instead, or fix the dependency.",
+    "  - Every entry needs an advisory ID, a justification grounded in why the code",
+    "    is not reachable or not exploitable HERE, and a reviewBy date.",
+    "  - The audit script FAILS once reviewBy has passed. That is deliberate: an",
+    "    accepted risk with no expiry is an ignored risk.",
+    "  - Entries that no longer match any finding are reported as stale. Remove them."
+  ],
+  "allow": [
+    {
+      "advisory": "GHSA-ggr8-5vv4-36mx",
+      "packages": ["deepmerge-ts", "@prisma/config", "prisma"],
+      "severity": "high",
+      "title": "DeepmergeTS has stack exhaustion when merging recursive object graphs",
+      "justification": [
+        "Reachable only through the Prisma CLI (prisma -> @prisma/config -> deepmerge-ts),",
+        "which is build-and-migration tooling. It is not part of the @prisma/client query",
+        "runtime that serves requests.",
+        "",
+        "Verified not shipped: after `npm run build`, none of deepmerge-ts, @prisma/config,",
+        "or the prisma CLI appear anywhere under .next/standalone, which is what the",
+        "Dockerfile copies into the production image.",
+        "",
+        "It appears in the production dependency tree at all only because @prisma/client",
+        "declares `prisma` as an OPTIONAL PEER dependency, which npm installs by default.",
+        "That is why `npm audit --omit=dev` still reports it despite prisma being a",
+        "devDependency here.",
+        "",
+        "Triggering it requires attacker-controlled input to a Prisma config merge. Prisma",
+        "config comes from files in this repository, not from user input, so there is no",
+        "path from a faculty member or an anonymous visitor to this code.",
+        "",
+        "The only remediation npm offers is downgrading to prisma@6.12.0, which is older",
+        "than the client we generate against and fixes nothing that is actually reachable."
+      ],
+      "acceptedOn": "2026-08-18",
+      "reviewBy": "2026-11-18",
+      "reviewAction": "Check whether @prisma/config has bumped deepmerge-ts to >=8.0.0. If so, upgrade and delete this entry."
+    }
+  ]
+}

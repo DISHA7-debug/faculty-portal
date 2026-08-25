@@ -1,0 +1,433 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ ENUMS ============
+
+enum Role {
+  FACULTY
+  DEPT_ADMIN
+  SUPER_ADMIN
+}
+
+enum AccountStatus {
+  PENDING_VERIFICATION  // signed up, email not yet confirmed
+  PENDING_APPROVAL      // email confirmed, awaiting admin
+  ACTIVE
+  REJECTED
+  SUSPENDED
+}
+
+enum PublicationType {
+  JOURNAL
+  CONFERENCE
+  BOOK
+  BOOK_CHAPTER
+  PATENT
+  OTHER
+}
+
+enum DegreeLevel {
+  BACHELORS
+  MASTERS
+  MPHIL
+  PHD
+  POSTDOC
+  DIPLOMA
+  OTHER
+}
+
+enum CourseLevel {
+  UG
+  PG
+  PHD
+}
+
+enum ProjectType {
+  SPONSORED
+  CONSULTANCY
+  INTERNAL
+}
+
+enum ProjectStatus {
+  ONGOING
+  COMPLETED
+  SANCTIONED
+}
+
+enum GuidanceDegree {
+  PHD
+  MTECH
+  MSC
+  BTECH
+}
+
+enum GuidanceStatus {
+  ONGOING
+  COMPLETED
+  DISCONTINUED
+}
+
+/// How a supervised student's name appears on the PUBLIC profile.
+/// The student is a third party who never agreed to anything — see docs/SECURITY.md §11.
+enum GuidanceNameDisplay {
+  INITIALS
+  FULL_NAME
+}
+
+enum TokenType {
+  /// Short numeric code emailed to prove control of an address. Used for BOTH first
+  /// verification and every subsequent sign-in — there is no password.
+  LOGIN_OTP
+  EMAIL_CHANGE
+}
+
+// ============ IDENTITY ============
+
+model User {
+  id              String        @id @default(cuid())
+  email           String        @unique              // lowercased at write time
+  role            Role          @default(FACULTY)
+  status          AccountStatus @default(PENDING_VERIFICATION)
+  emailVerifiedAt DateTime? @db.Timestamptz(3)
+  lastLoginAt     DateTime? @db.Timestamptz(3)
+  /// Retained but unused by any access decision. Kept for now rather than dropped so a
+  /// future deliberate administrator lock has somewhere to live. Nothing sets them.
+  failedAttempts  Int           @default(0)
+  lockedUntil     DateTime? @db.Timestamptz(3)
+  createdAt       DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime      @updatedAt @db.Timestamptz(3)
+
+  // The department a DEPT_ADMIN administers. Deliberately separate from
+  // profile.departmentId (which is user-editable) — deriving admin scope
+  // from an editable field would let an admin escalate by editing their
+  // own profile. Only SUPER_ADMIN may write this field.
+  administersDepartmentId String?
+  administersDepartment   Department? @relation("DepartmentAdmins", fields: [administersDepartmentId], references: [id])
+
+  profile   Profile?
+  sessions  Session[]
+  tokens    VerificationToken[]
+  auditLogs AuditLog[]
+  usedAllowedEmails AllowedEmail[]
+
+  @@index([status])
+  @@index([email, status])
+  @@index([administersDepartmentId])
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String   @unique          // SHA-256 of the cookie value; raw token never stored
+  userAgent  String?
+  ipAddress  String?
+  expiresAt  DateTime @db.Timestamptz(3)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model VerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique          // never store the raw token
+  type      TokenType
+  payload   String?                    // e.g. the new email for EMAIL_CHANGE
+  /// Failed verification attempts against THIS token.
+  ///
+  /// Durable rather than held in Redis on purpose: a 6-digit code has only a million
+  /// possibilities, so the attempt cap is the primary defence against brute force. Redis
+  /// is explicitly disposable (PROJECT_PLAN §4.1) and a restart would reset the counter,
+  /// handing an attacker a fresh budget. See docs/SECURITY.md §2.
+  attempts  Int       @default(0)
+  expiresAt DateTime @db.Timestamptz(3)
+  usedAt    DateTime? @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@index([expiresAt])
+}
+
+// Emails pre-authorized by admin (CSV import) — optional stricter gate than domain-only
+model AllowedEmail {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  departmentId String?
+  note         String?
+  usedAt       DateTime? @db.Timestamptz(3)
+  usedByUserId String?
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  department Department? @relation(fields: [departmentId], references: [id])
+  usedByUser User?       @relation(fields: [usedByUserId], references: [id])
+
+  @@index([usedByUserId])
+}
+
+// ============ CORE PROFILE ============
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String   @unique          // e.g. "CSE"
+  slug      String   @unique
+  about     String?  @db.Text
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  profiles      Profile[]
+  allowedEmails AllowedEmail[]
+  adminUsers    User[]    @relation("DepartmentAdmins")
+}
+
+model Profile {
+  id           String  @id @default(cuid())
+  userId       String  @unique
+  departmentId String                  // required — department selection is mandatory at signup
+
+  // Identity
+  fullName    String
+  slug        String  @unique          // "dr-anita-sharma"; immutable once published
+  designation String?                  // Assistant Professor, Professor, ...
+  photoKey    String?                  // R2 object key, not a URL
+  photoBlurhash String?
+
+  // Contact
+  officeNo    String?
+  mobile      String?
+  altEmail    String?
+  showMobile  Boolean @default(false)  // field-level privacy
+  showAltEmail Boolean @default(true)
+
+  // Narrative
+  about             String?  @db.Text  // sanitized HTML or markdown
+  researchInterests String[]           // Postgres text[]
+  personalPageUrl   String?
+  cvKey             String?            // R2 object key
+
+  // Academic identifiers
+  orcid             String?
+  scopusId          String?
+  googleScholarId   String?
+  researcherId      String?
+  linkedinUrl       String?
+
+  // State
+  isPublished    Boolean   @default(false)
+  publishedAt    DateTime? @db.Timestamptz(3)
+  completeness   Int       @default(0)  // 0-100, recomputed on save
+  viewCount      Int       @default(0)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(3)
+
+  // Full-text search vector, maintained by a Postgres trigger
+  searchVector Unsupported("tsvector")?
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department  Department    @relation(fields: [departmentId], references: [id])
+  educations  Education[]
+  publications Publication[]
+  positions   Position[]
+  awards      Award[]
+  courses     Course[]
+  projects    ResearchProject[]
+  guidances   Guidance[]
+  memberships Membership[]
+
+  @@index([departmentId, isPublished])
+  @@index([isPublished, fullName])
+
+  /// GIN index for full-text search.
+  ///
+  /// Declared HERE rather than only in the manual SQL migration. Prisma does not know
+  /// about indexes it did not create, so it treated this one as drift and emitted
+  /// `DROP INDEX profile_search_idx` into an unrelated migration — silently removing it.
+  /// Search kept returning correct results on a sequential scan, so nothing failed and
+  /// nothing was logged. Declaring it keeps Prisma from dropping it again.
+  @@index([searchVector(ops: raw("tsvector_ops"))], type: Gin)
+}
+
+// ============ REPEATABLE SECTIONS ============
+// Every one of these carries `sortOrder` so faculty can drag-reorder,
+// and `profileId` so ownership can be checked on every mutation.
+
+model Education {
+  id          String      @id @default(cuid())
+  profileId   String
+  degree      String                    // "Ph.D."
+  level       DegreeLevel
+  field       String?                   // "Computer Science"
+  institution String
+  yearFrom    Int?
+  yearTo      Int?
+  sortOrder   Int         @default(0)
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, sortOrder])
+}
+
+model Publication {
+  id        String          @id @default(cuid())
+  profileId String
+  type      PublicationType
+  title     String          @db.Text
+  authors   String          @db.Text    // "Sharma A., Verma B., Singh C."
+  venue     String?                     // journal or conference name
+  volume    String?
+  issue     String?
+  pages     String?
+  year      Int?
+  doi       String?
+  url       String?
+  publisher String?
+  isbn      String?
+  citations Int?
+  importedFrom String?                  // "CROSSREF" | "ORCID" | "BIBTEX" | null
+  sortOrder Int             @default(0)
+  createdAt DateTime        @default(now()) @db.Timestamptz(3)
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, year(sort: Desc)])
+  @@index([profileId, type])
+  @@unique([profileId, doi])            // prevents duplicate imports
+}
+
+model Position {
+  id           String  @id @default(cuid())
+  profileId    String
+  title        String
+  organisation String?
+  startYear    Int?
+  endYear      Int?
+  isCurrent    Boolean @default(false)
+  description  String? @db.Text
+  sortOrder    Int     @default(0)
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, sortOrder])
+}
+
+model Award {
+  id          String  @id @default(cuid())
+  profileId   String
+  title       String
+  awardedBy   String?
+  year        Int?
+  description String? @db.Text
+  sortOrder   Int     @default(0)
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, sortOrder])
+}
+
+model Course {
+  id        String      @id @default(cuid())
+  profileId String
+  code      String?
+  name      String
+  level     CourseLevel
+  semester  String?
+  year      Int?
+  sortOrder Int         @default(0)
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, sortOrder])
+}
+
+model ResearchProject {
+  id          String        @id @default(cuid())
+  profileId   String
+  type        ProjectType
+  title       String        @db.Text
+  agency      String?                     // funding body
+  amountLakhs Decimal?      @db.Decimal(12, 2)
+  role        String?                     // "Principal Investigator"
+  startDate   DateTime? @db.Timestamptz(3)
+  endDate     DateTime? @db.Timestamptz(3)
+  status      ProjectStatus @default(ONGOING)
+  sortOrder   Int           @default(0)
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, sortOrder])
+}
+
+model Guidance {
+  id          String         @id @default(cuid())
+  profileId   String
+  studentName String
+  /// Public display form. Defaults to INITIALS at the database level so a row created by
+  /// any future import path is private-by-default; the create action raises it to
+  /// FULL_NAME for COMPLETED students. docs/SECURITY.md §11.
+  nameDisplay GuidanceNameDisplay @default(INITIALS)
+  degree      GuidanceDegree
+  topic       String?        @db.Text
+  status      GuidanceStatus @default(ONGOING)
+  startYear   Int?
+  awardYear   Int?
+  coGuide     String?
+  sortOrder   Int            @default(0)
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, status])
+}
+
+model Membership {
+  id             String  @id @default(cuid())
+  profileId      String
+  body           String                    // "IEEE"
+  membershipType String?                   // "Senior Member"
+  sinceYear      Int?
+  membershipNo   String?
+  sortOrder      Int     @default(0)
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, sortOrder])
+}
+
+// ============ OPERATIONS ============
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String                        // "profile.publish", "user.approve"
+  entity    String                        // "Publication"
+  entityId  String?
+  metadata  Json?                         // before/after diff
+  ipAddress String?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([entity, entityId])
+}
+
+model FileObject {
+  id           String   @id @default(cuid())
+  key          String   @unique          // R2 object key
+  ownerUserId  String?
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([ownerUserId])
+}

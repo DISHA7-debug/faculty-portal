@@ -1,0 +1,31 @@
+# Keep secrets and local state out of the build context.
+#
+# This file is load-bearing for security, not just build speed: the builder stage
+# does `COPY . .`, so without these rules a developer's real .env — database
+# password, AUTH_SECRET, SES and R2 credentials — is baked into an image layer
+# and readable by anyone who can pull it, even if a later stage does not copy it.
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+
+node_modules
+.next
+out
+build
+
+npm-debug.log*
+*.log
+coverage
+
+.DS_Store
+.vscode
+.idea
+
+# Not needed at runtime; docs and deploy scripts are mounted or read on the host.
+docs
+README.md
+CLAUDE.md
+*.zip

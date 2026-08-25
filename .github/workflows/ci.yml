@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Weekly run so an allowlist entry that passes its reviewBy date, or a newly
+  # published advisory, surfaces on its own rather than on the next push.
+  schedule:
+    - cron: '0 3 * * 1'
+
+# A newer push to the same branch makes the in-flight run obsolete.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: typecheck · lint · audit · build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      # Build-time only. `next build` never connects to a database — it just needs the
+      # variable to parse so Prisma can generate the client. Real credentials live in
+      # the VPS .env and are never needed by CI.
+      DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Matches the Dockerfile base image. Node 20 is end-of-life.
+          node-version: '22'
+          cache: 'npm'
+
+      # `npm ci` respects the lockfile exactly and fails if package.json and the
+      # lockfile disagree — which is what makes it the right choice over `npm install`.
+      - name: Install dependencies
+        run: npm ci
+
+      # Must precede typecheck and build: both need the generated Prisma client,
+      # and it is gitignored.
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      # Authorization primitives. These tests encode the IDOR, department-scope, and
+      # approval-gate rules from docs/SECURITY.md §1–2; they are verified to fail when
+      # those properties are broken, not merely to pass today.
+      - name: Tests
+        run: npm test
+
+      # Reviewed-allowlist gate. Fails on any unaccepted high/critical finding and on
+      # any allowlist entry past its review date. Never lower --audit-level to make
+      # this pass — see audit-allowlist.json.
+      - name: Dependency audit
+        run: npm run audit
+
+      # No domain is registered yet; every hostname must stay env-driven so cutover
+      # is config-only. See docs/CUTOVER.md.
+      - name: No hardcoded hostnames
+        run: npm run check:hostnames
+
+      # docs/SECURITY.md §1.4 — fails if any mutating server action or route handler
+      # never reaches an ownership check. Catches the bug of omission that IDOR is.
+      - name: Ownership checks on every mutation
+        run: npm run check:ownership
+
+      - name: Build
+        run: npm run build

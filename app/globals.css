@@ -1,0 +1,357 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/*
+  Faculty Portal — design tokens.
+  Direction: CLAUDE.md §7. Editorial, not admin-panel. Warm paper ground,
+  one deep institutional accent, display serif for names and headings.
+
+  Three layers, in order:
+    1. Primitives  — raw scales (--paper-*, --ink-*, --accent-*). Never used directly in components.
+    2. Semantics   — role names (--background, --primary, --border, ...). Components use these.
+    3. Exposure    — @theme inline publishes semantics as Tailwind utilities (bg-background, ...).
+
+  Dark mode is class-based (`.dark` on <html>, driven by next-themes) rather than
+  a bare prefers-color-scheme media query, so a manual toggle can be added in Sprint 4
+  without touching a single token.
+*/
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================
+   1. PRIMITIVES
+   ============================================================ */
+
+:root {
+  /* Warm neutral ramp. Hue ~100 keeps it paper, never blue-grey.
+     --paper-100 is the #FAFAF8 the brief calls for. */
+  --paper-50: oklch(0.991 0.002 100);
+  --paper-100: oklch(0.983 0.003 100);
+  --paper-200: oklch(0.962 0.004 100);
+  --paper-300: oklch(0.925 0.005 100);
+  --paper-400: oklch(0.865 0.006 100);
+  --paper-500: oklch(0.715 0.008 100);
+  --paper-600: oklch(0.560 0.009 100);
+  --paper-700: oklch(0.432 0.010 100);
+  --paper-800: oklch(0.292 0.009 100);
+  --paper-900: oklch(0.193 0.007 100);
+  --paper-950: oklch(0.168 0.008 95);
+
+  /* Deep institutional indigo. Chosen over a burgundy so it can never be
+     confused with --destructive at a glance. */
+  --accent-50: oklch(0.962 0.014 264);
+  --accent-100: oklch(0.922 0.032 264);
+  --accent-200: oklch(0.852 0.056 264);
+  --accent-300: oklch(0.752 0.086 264);
+  --accent-400: oklch(0.622 0.116 264);
+  --accent-500: oklch(0.522 0.130 264);
+  --accent-600: oklch(0.432 0.120 264);
+  --accent-700: oklch(0.352 0.095 264);
+  --accent-800: oklch(0.286 0.074 264);
+  --accent-900: oklch(0.232 0.055 264);
+
+  /* Feedback hues. Kept low-chroma so they sit inside the editorial palette. */
+  --danger: oklch(0.545 0.196 27);
+  --danger-fg: oklch(0.991 0.002 100);
+  --success: oklch(0.520 0.108 155);
+  --warning: oklch(0.700 0.140 75);
+}
+
+/* ============================================================
+   2. SEMANTICS — light
+   ============================================================ */
+
+:root {
+  --background: var(--paper-100);
+  --foreground: var(--paper-900);
+
+  --card: var(--paper-50);
+  --card-foreground: var(--paper-900);
+  --popover: var(--paper-50);
+  --popover-foreground: var(--paper-900);
+
+  --primary: var(--accent-700);
+  --primary-foreground: var(--paper-50);
+
+  --secondary: var(--paper-200);
+  --secondary-foreground: var(--paper-800);
+
+  --muted: var(--paper-200);
+  --muted-foreground: var(--paper-600);
+
+  --accent: var(--accent-50);
+  --accent-foreground: var(--accent-800);
+
+  --destructive: var(--danger);
+  --destructive-foreground: var(--danger-fg);
+
+  --border: var(--paper-300);
+  --input: var(--paper-300);
+  --ring: var(--accent-500);
+
+  /* Editorial extras used by the public profile and directory. */
+  --hairline: color-mix(in oklab, var(--paper-900) 8%, transparent);
+  --surface-raised: var(--paper-50);
+  --surface-sunken: var(--paper-200);
+
+  --chart-1: var(--accent-500);
+  --chart-2: var(--accent-300);
+  --chart-3: var(--accent-700);
+  --chart-4: var(--paper-500);
+  --chart-5: var(--paper-700);
+
+  --sidebar: var(--paper-50);
+  --sidebar-foreground: var(--paper-900);
+  --sidebar-primary: var(--accent-700);
+  --sidebar-primary-foreground: var(--paper-50);
+  --sidebar-accent: var(--paper-200);
+  --sidebar-accent-foreground: var(--paper-800);
+  --sidebar-border: var(--paper-300);
+  --sidebar-ring: var(--accent-500);
+}
+
+/* ============================================================
+   2b. SEMANTICS — dark
+   Warm charcoal, never pure black; the accent lifts so it stays
+   legible against a dark ground (AA on body text, AAA on headings).
+   ============================================================ */
+
+.dark {
+  --background: var(--paper-950);
+  --foreground: var(--paper-100);
+
+  --card: oklch(0.212 0.009 95);
+  --card-foreground: var(--paper-100);
+  --popover: oklch(0.212 0.009 95);
+  --popover-foreground: var(--paper-100);
+
+  --primary: var(--accent-300);
+  --primary-foreground: var(--paper-950);
+
+  --secondary: oklch(0.272 0.009 95);
+  --secondary-foreground: var(--paper-100);
+
+  --muted: oklch(0.272 0.009 95);
+  --muted-foreground: var(--paper-500);
+
+  --accent: oklch(0.288 0.032 264);
+  --accent-foreground: var(--accent-100);
+
+  --destructive: oklch(0.680 0.185 25);
+  --destructive-foreground: var(--paper-950);
+
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: var(--accent-400);
+
+  --hairline: color-mix(in oklab, var(--paper-100) 14%, transparent);
+  --surface-raised: oklch(0.212 0.009 95);
+  /* Darker than --background, mirroring light mode where sunken is darker than paper.
+     The earlier value was LIGHTER than the page, which inverted the depth cue. */
+  --surface-sunken: oklch(0.132 0.007 95);
+
+  --chart-1: var(--accent-300);
+  --chart-2: var(--accent-500);
+  --chart-3: var(--accent-200);
+  --chart-4: var(--paper-500);
+  --chart-5: var(--paper-400);
+
+  --sidebar: oklch(0.212 0.009 95);
+  --sidebar-foreground: var(--paper-100);
+  --sidebar-primary: var(--accent-300);
+  --sidebar-primary-foreground: var(--paper-950);
+  --sidebar-accent: oklch(0.272 0.009 95);
+  --sidebar-accent-foreground: var(--paper-100);
+  --sidebar-border: oklch(1 0 0 / 11%);
+  --sidebar-ring: var(--accent-400);
+}
+
+/* ============================================================
+   3. NON-COLOUR TOKENS
+   ============================================================ */
+
+:root {
+  /* Type. --font-display is the serif used for faculty names and page headings;
+     --font-sans carries everything else. Both are injected by next/font in layout.tsx. */
+  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+
+  /* Radii. --radius is the single knob; the rest derive from it. */
+  --radius: 0.625rem;
+
+  /* Editorial rhythm. Fluid so 360px and 1440px both feel deliberate. */
+  --space-gutter: clamp(1.25rem, 4vw, 2.5rem);
+  --space-section: clamp(3.5rem, 9vw, 7rem);
+  --measure: 68ch; /* max line length for running prose */
+
+  /* Shadows: low, warm, and few. Cards lift on hover, nothing else. */
+  --shadow-xs: 0 1px 2px oklch(0.193 0.007 100 / 0.05);
+  --shadow-sm: 0 1px 3px oklch(0.193 0.007 100 / 0.07), 0 1px 2px oklch(0.193 0.007 100 / 0.04);
+  --shadow-md: 0 4px 12px oklch(0.193 0.007 100 / 0.08), 0 2px 4px oklch(0.193 0.007 100 / 0.04);
+  --shadow-lg: 0 12px 32px oklch(0.193 0.007 100 / 0.10), 0 4px 8px oklch(0.193 0.007 100 / 0.04);
+
+  /* Motion. Springs live in components/motion; these cover CSS transitions. */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 140ms;
+  --duration-base: 220ms;
+}
+
+.dark {
+  --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.30);
+  --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.38), 0 1px 2px oklch(0 0 0 / 0.24);
+  --shadow-md: 0 4px 12px oklch(0 0 0 / 0.44), 0 2px 4px oklch(0 0 0 / 0.26);
+  --shadow-lg: 0 12px 32px oklch(0 0 0 / 0.52), 0 4px 8px oklch(0 0 0 / 0.30);
+}
+
+/* ============================================================
+   4. TAILWIND EXPOSURE
+   `inline` so utilities resolve the variable at use-site and therefore
+   follow .dark without regenerating a second set of classes.
+   ============================================================ */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-hairline: var(--hairline);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Primitives exposed too, for the rare case a component needs a specific step. */
+  --color-paper-50: var(--paper-50);
+  --color-paper-100: var(--paper-100);
+  --color-paper-200: var(--paper-200);
+  --color-paper-300: var(--paper-300);
+  --color-paper-400: var(--paper-400);
+  --color-paper-500: var(--paper-500);
+  --color-paper-600: var(--paper-600);
+  --color-paper-700: var(--paper-700);
+  --color-paper-800: var(--paper-800);
+  --color-paper-900: var(--paper-900);
+  --color-paper-950: var(--paper-950);
+  --color-accent-50: var(--accent-50);
+  --color-accent-100: var(--accent-100);
+  --color-accent-200: var(--accent-200);
+  --color-accent-300: var(--accent-300);
+  --color-accent-400: var(--accent-400);
+  --color-accent-500: var(--accent-500);
+  --color-accent-600: var(--accent-600);
+  --color-accent-700: var(--accent-700);
+  --color-accent-800: var(--accent-800);
+  --color-accent-900: var(--accent-900);
+
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-display);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  --spacing-gutter: var(--space-gutter);
+  --spacing-section: var(--space-section);
+}
+
+/* ============================================================
+   5. BASE
+   ============================================================ */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Display serif carries names and page headings, per §7. */
+  .font-display,
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.011em;
+  }
+
+  /* A visible focus ring is a requirement, not a polish item (§6). */
+  :focus-visible {
+    @apply outline-ring;
+    outline-width: 2px;
+    outline-style: solid;
+    outline-offset: 2px;
+  }
+
+  /* Accessibility: honour the OS setting globally. Framer Motion variants
+     additionally check useReducedMotion() where they animate layout. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Constrains running prose to a comfortable measure. */
+  .measure {
+    max-width: var(--measure);
+  }
+}

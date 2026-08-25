@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+build/
+.env
+.env.local
+.env*.local
+*.log
+.DS_Store
+/coverage
+/prisma/*.db
+next-env.d.ts
+tsconfig.tsbuildinfo
+faculty-portal-starter.zip

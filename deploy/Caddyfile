@@ -1,0 +1,69 @@
+# Reverse proxy + TLS termination.
+#
+# Nothing here is hardcoded to a domain. Both knobs come from the environment, so the
+# same file serves a laptop with no DNS and the real college domain later:
+#
+#   SITE_ADDRESS   what Caddy answers on.
+#                  default `localhost` — works with no DNS at all
+#                  cutover: faculty.<college domain>
+#   CADDY_TLS      argument to the `tls` directive.
+#                  default `internal` — Caddy's own local CA, self-signed, no ACME,
+#                  which is what lets this run without a public domain
+#                  cutover: an admin email address, which switches Caddy to
+#                  Let's Encrypt and automatic certificate renewal
+#
+# See docs/CUTOVER.md before changing either of these.
+
+{
+	# Quieter startup; the admin API stays on loopback inside the container.
+	admin off
+
+	servers {
+		# Which upstream addresses may set X-Forwarded-*. Only the container network sits
+		# in front of Caddy here, so private ranges are the correct trust boundary. Without
+		# this, Caddy honours a client-supplied X-Forwarded-For when computing {remote_host}
+		# and every IP-keyed rate limit in the app becomes bypassable by sending a header.
+		trusted_proxies static private_ranges
+		client_ip_headers X-Forwarded-For
+	}
+}
+
+{$SITE_ADDRESS:localhost} {
+	tls {$CADDY_TLS:internal}
+
+	encode gzip zstd
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options    "nosniff"
+		X-Frame-Options           "DENY"
+		Referrer-Policy           "strict-origin-when-cross-origin"
+		Permissions-Policy        "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+		-Server
+	}
+
+	# Upload ceiling enforced at the proxy as well as in the app (docs/SECURITY.md §5).
+	# Sized above the 10MB PDF limit to leave room for multipart overhead.
+	request_body {
+		max_size 12MB
+	}
+
+	reverse_proxy app:3000 {
+		# OVERWRITE, not append. {client_ip} is Caddy's own determination, computed under
+		# the trusted_proxies policy above, so a client-supplied X-Real-IP is discarded
+		# here rather than forwarded. lib/request-ip.ts prefers this header precisely
+		# because it cannot be influenced from outside.
+		header_up X-Real-IP {client_ip}
+
+		health_uri /api/health
+		health_interval 30s
+		health_timeout 5s
+	}
+
+	log {
+		output file /data/access.log {
+			roll_size 10mb
+			roll_keep 10
+		}
+	}
+}

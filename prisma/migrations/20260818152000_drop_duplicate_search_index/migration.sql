@@ -1,0 +1,15 @@
+-- Remove the hand-named GIN index, leaving only the Prisma-managed one.
+--
+-- History: 20260817202610_search_vector created `profile_search_idx` by hand, because the
+-- searchVector column is Unsupported("tsvector") and Prisma could not express the index.
+-- Prisma therefore did not know it existed, treated it as drift, and emitted
+-- `DROP INDEX profile_search_idx` into an unrelated migration — silently. Search kept
+-- working on a sequential scan, so nothing failed and nothing was logged.
+--
+-- The index is now declared in schema.prisma, so Prisma owns it and created
+-- `Profile_searchVector_idx`. On a database built from scratch both migrations run and
+-- both indexes exist, which is redundant write cost on every profile update. This drops
+-- the hand-named one.
+--
+-- Lesson worth keeping: an object Prisma cannot see is an object Prisma will remove.
+DROP INDEX IF EXISTS profile_search_idx;

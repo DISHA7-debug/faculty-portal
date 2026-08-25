@@ -1,0 +1,101 @@
+# Project name is explicit so the DEV stack and the PROD stack are separate Docker
+# projects. Both files live in this directory, and without this they share the default
+# project name — starting one SILENTLY REPLACES the other's containers. That is how the
+# dev Redis (which publishes 6379 to the host) got swapped for the prod one (internal
+# only), after which every host-side test failed closed against an unreachable Redis.
+name: faculty-dev
+
+# Local development: Postgres + Redis only.
+# The Next.js app runs on the host via `npm run dev` for fast HMR.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: faculty_postgres_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: faculty
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: faculty_portal
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U faculty -d faculty_portal"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: faculty_redis_dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --save "" --appendonly no
+
+  # Dev SMTP sink. Catches every outbound email instead of delivering it, so
+  # verification and reset flows can be exercised without SES credentials and
+  # without any risk of mailing a real faculty member from a dev machine.
+  # Same nodemailer code path as production — only SMTP_* env differs.
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: faculty_mailpit_dev
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP  — point SMTP_HOST/SMTP_PORT here
+      - "8025:8025" # Web UI — open http://localhost:8025 to read what was sent
+    environment:
+      MP_MAX_MESSAGES: 500
+      # Dev only: accept any credentials and plaintext auth, so the same
+      # nodemailer config shape works against Mailpit and against SES.
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Dev object storage. S3-compatible, so lib/storage.ts talks to it with exactly the
+  # same SDK calls it will use against Cloudflare R2 — the storage path is exercised
+  # locally rather than staying unverified until cutover, the same reason Mailpit exists.
+  minio:
+    image: minio/minio:latest
+    container_name: faculty_minio_dev
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000" # S3 API — point R2_ENDPOINT here
+      - "9001:9001" # Web console — browse uploaded objects
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Creates the bucket once MinIO is up. R2 buckets are made in the dashboard, so this
+  # exists only to make `docker compose up` self-sufficient in development.
+  minio-init:
+    image: minio/mc:latest
+    container_name: faculty_minio_init
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 minioadmin minioadmin; do sleep 1; done;
+      mc mb --ignore-existing local/faculty-portal-media;
+      mc anonymous set download local/faculty-portal-media;
+      echo 'bucket ready';
+      "
+    restart: "no"
+
+volumes:
+  pgdata:
+  miniodata:

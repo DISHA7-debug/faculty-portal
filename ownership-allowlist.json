@@ -1,0 +1,19 @@
+{
+  "$comment": [
+    "Handlers that write a profile-owned row but legitimately cannot check ownership.",
+    "Consumed by scripts/check-ownership.mjs, enforcing docs/SECURITY.md §1.4.",
+    "",
+    "Currently EMPTY, and that is the goal state. The pre-authentication actions that",
+    "used to be listed here (login, signup, reset, resend) are no longer flagged at all,",
+    "because the detector now looks specifically for writes to profile-owned models",
+    "rather than for any database write.",
+    "",
+    "RULES if an entry is ever needed:",
+    "  - Adding one is a security decision, not a build fix. The reason must say WHY the",
+    "    ownership check cannot apply, specifically enough to check without reading code.",
+    "  - 'It doesn't pass otherwise' is not a reason. A handler that mutates a row",
+    "    belonging to a profile calls assertOwnsProfileRow. There is no exemption.",
+    "  - Entries whose handler no longer exists are reported as stale. Delete them."
+  ],
+  "allow": []
+}

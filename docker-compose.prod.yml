@@ -1,0 +1,132 @@
+# Separate project name from the dev stack — see the note in docker-compose.yml.
+name: faculty-prod
+
+# Production stack. Everything always-on.
+# `restart: unless-stopped` is what guarantees the backend never "goes to sleep".
+#
+# Runs with no public domain by default: SITE_ADDRESS falls back to `localhost` and
+# Caddy issues a certificate from its own internal CA. Point it at the real hostname
+# by setting SITE_ADDRESS and CADDY_TLS in .env — see docs/CUTOVER.md.
+services:
+  # One-shot migration gate. Runs `prisma migrate deploy`, exits, and the app only
+  # starts if it exited 0. This is what keeps a schema change and the code that
+  # depends on it from racing each other on boot.
+  #
+  # It is a separate image stage because the runner image has no node_modules and
+  # therefore no Prisma CLI — see the `migrator` stage in the Dockerfile.
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrator
+    container_name: faculty_migrate
+    env_file: .env
+    environment:
+      # Overrides whatever .env says. `environment` beats `env_file` in compose, and
+      # .env is written for host-side development where Postgres is on localhost.
+      # Inside the compose network the host is the service name — without this override
+      # the container resolves `localhost` to itself and the migration fails to connect.
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public&connection_limit=15
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Explicitly not restarted: this is a task, not a service. A restart loop here
+    # would hammer the database and mask a genuinely failing migration.
+    restart: "no"
+    networks: [internal]
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: faculty_app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # These three override .env deliberately — see the note on the migrate service.
+      #
+      # NODE_ENV is the important one: .env ships NODE_ENV=development for host-side
+      # work, and env_file takes precedence over the Dockerfile's ENV. Without this
+      # line the production image would boot in development mode — React in dev,
+      # no production optimisations, and lib/env.ts skipping every production
+      # safety assertion, silently.
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public&connection_limit=15
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks: [web, internal]
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: faculty_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./deploy/backup.sh:/usr/local/bin/backup.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # NOT exposed to the host. Only reachable on the internal network.
+    networks: [internal]
+
+  redis:
+    image: redis:7-alpine
+    container_name: faculty_redis
+    restart: unless-stopped
+    command: redis-server --save "" --appendonly no --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [internal]
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: faculty_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # Both default inside the Caddyfile, so an unset value still boots:
+      #   SITE_ADDRESS -> localhost      CADDY_TLS -> internal
+      SITE_ADDRESS: ${SITE_ADDRESS:-localhost}
+      CADDY_TLS: ${CADDY_TLS:-internal}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [app]
+    networks: [web]
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
+
+networks:
+  web:
+  internal:
+    internal: true
