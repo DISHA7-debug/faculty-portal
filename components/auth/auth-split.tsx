@@ -30,13 +30,13 @@ export function AuthSplit({
           Faculty Portal
         </Link>
 
-        <div className="flex flex-1 items-center py-10">
-          <div className="w-full max-w-md">{children}</div>
+        <div className="flex flex-1 items-center py-10 lg:pl-16">
+          <div className="w-full max-w-md mx-auto">{children}</div>
         </div>
       </main>
 
       <aside className="border-t border-hairline bg-surface-sunken px-gutter py-10 lg:border-l lg:border-t-0 lg:py-14">
-        <div className="lg:sticky lg:top-14">{panel}</div>
+        <div className="w-full lg:sticky lg:top-4">{panel}</div>
       </aside>
     </div>
   );

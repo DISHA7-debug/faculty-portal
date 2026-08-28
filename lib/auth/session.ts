@@ -35,7 +35,7 @@ import { safeNextPath } from '@/lib/safe-redirect';
  * insecure-cookie fallback, because a dev/prod split here is exactly how a Secure flag
  * goes missing in production.
  */
-export const SESSION_COOKIE = '__Host-fp_session';
+export const SESSION_COOKIE = process.env.NODE_ENV === 'production' ? '__Host-fp_session' : 'fp_session';
 
 const SESSION_TTL_DAYS = Number(process.env.SESSION_MAX_AGE_DAYS ?? 7);
 const SESSION_TTL_MS = SESSION_TTL_DAYS * 24 * 60 * 60 * 1000;
@@ -174,7 +174,7 @@ export async function setSessionCookie(
   const store = await cookies();
   store.set(SESSION_COOKIE, rawToken, {
     httpOnly: true, // unreadable from JavaScript, so XSS cannot exfiltrate it
-    secure: true, // required by the __Host- prefix
+    secure: process.env.NODE_ENV === 'production', // required by the __Host- prefix
     sameSite: 'lax', // blocks cross-site POST CSRF while keeping normal inbound links working
     path: '/', // required by the __Host- prefix
     expires: expiresAt,
@@ -185,7 +185,7 @@ export async function clearSessionCookie(): Promise<void> {
   const store = await cookies();
   store.set(SESSION_COOKIE, '', {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: 0,

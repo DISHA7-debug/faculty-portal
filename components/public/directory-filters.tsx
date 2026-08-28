@@ -93,7 +93,7 @@ export function DirectoryFilters({
             type="search"
             defaultValue={q}
             placeholder="Search by name or research area…"
-            className="min-h-11 w-full rounded-md border border-input bg-surface-raised px-3.5 text-[0.95rem] outline-none placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-ring"
+            className="min-h-11 w-full rounded-xl border border-border bg-surface-raised px-3.5 text-[0.95rem] outline-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
           />
         </div>
 
@@ -116,7 +116,7 @@ export function DirectoryFilters({
 
         <button
           type="submit"
-          className="min-h-11 shrink-0 rounded-md bg-primary px-5 text-[0.9rem] text-primary-foreground transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="min-h-11 shrink-0 rounded-xl bg-primary px-6 text-[0.9rem] font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           Search
         </button>
@@ -165,20 +165,31 @@ function Select({
       <label htmlFor={id} className="sr-only">
         {label}
       </label>
-      <select
-        id={id}
-        name={id}
-        defaultValue={value}
-        onChange={onChange}
-        className="min-h-11 w-full rounded-md border border-input bg-surface-raised px-3 text-[0.9rem] outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <option value="">{allLabel}</option>
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label} ({o.count})
-          </option>
-        ))}
-      </select>
+      <div className="relative flex items-center">
+        <select
+          id={id}
+          name={id}
+          defaultValue={value}
+          onChange={onChange}
+          className="min-h-11 w-full appearance-none rounded-xl border border-border bg-surface-raised pl-4 pr-10 text-[0.9rem] outline-none transition-colors focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+        >
+          <option value="">{allLabel}</option>
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label} ({o.count})
+            </option>
+          ))}
+        </select>
+        <svg
+          className="pointer-events-none absolute right-3 size-4 text-muted-foreground/60"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          strokeWidth="2"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+        </svg>
+      </div>
     </div>
   );
 }

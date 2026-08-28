@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 /**
  * Header for every public page.
@@ -13,7 +14,7 @@ import Link from 'next/link';
  */
 export function SiteHeader() {
   return (
-    <header className="border-b border-hairline">
+    <header className="sticky top-0 z-50 border-b border-hairline bg-background/70 backdrop-blur-lg">
       <div className="px-gutter">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 py-4">
           <Link
@@ -23,19 +24,18 @@ export function SiteHeader() {
             Faculty Portal
           </Link>
 
-          <nav aria-label="Site" className="flex items-center gap-1">
+          <nav aria-label="Site" className="flex items-center gap-2">
             <Link
               href="/faculty"
               className="rounded-md px-3 py-2 text-[0.85rem] transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               Directory
             </Link>
-            <Link
-              href="/login"
-              className="rounded-md px-3 py-2 text-[0.85rem] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            >
-              Faculty sign in
-            </Link>
+            <Button asChild variant="default" size="sm">
+              <Link href="/login">
+                Faculty sign in
+              </Link>
+            </Button>
           </nav>
         </div>
       </div>

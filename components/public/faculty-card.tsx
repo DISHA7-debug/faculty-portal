@@ -80,53 +80,57 @@ export function FacultyCard({
       >
         <Link
           href={`/faculty/${entry.slug}`}
-          className="flex h-full flex-col rounded-lg border border-hairline bg-surface-raised p-5 transition-colors hover:border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+          className="group flex h-full flex-col justify-between rounded-xl border border-hairline bg-surface-raised p-6 transition-all duration-300 hover:border-border/60 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
         >
-          {photoUrl ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={photoUrl}
-              width={512}
-              height={512}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              // alt="" and aria-hidden: the name is right below it in text, so announcing
-              // "photo of X" then "X" makes a screen reader say the name twice.
-              aria-hidden="true"
-              className="mb-4 size-16 rounded-md border border-hairline object-cover"
-            />
-          ) : (
-            <div
-              aria-hidden="true"
-              className="mb-4 flex size-16 items-center justify-center rounded-md border border-hairline bg-surface-sunken font-display text-[1.4rem] tracking-[0.05em] text-muted-foreground/60"
-            >
-              {initials || '·'}
-            </div>
-          )}
+          <div className="flex-1">
+            {photoUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={photoUrl}
+                width={512}
+                height={512}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                aria-hidden="true"
+                className="mb-4 size-16 rounded-full border border-hairline object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+            ) : (
+              <div
+                aria-hidden="true"
+                className="mb-4 flex size-16 items-center justify-center rounded-full border border-hairline bg-surface-sunken font-display text-[1.4rem] tracking-[0.05em] text-muted-foreground/60 transition-transform duration-300 group-hover:scale-105"
+              >
+                {initials || '·'}
+              </div>
+            )}
 
-          <p className="font-display text-[1.2rem] leading-tight tracking-[-0.01em] text-balance">
-            {entry.fullName}
-          </p>
-
-          {entry.designation ? (
-            <p className="mt-1.5 text-[0.85rem] leading-snug text-muted-foreground text-balance">
-              {entry.designation}
+            <p className="font-display text-[1.25rem] leading-snug tracking-[-0.01em] text-foreground group-hover:text-primary transition-colors">
+              {entry.fullName}
             </p>
-          ) : null}
 
-          <p className="mt-1 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground">
-            {entry.departmentCode}
-          </p>
+            {entry.designation ? (
+              <p className="mt-1 text-[0.85rem] leading-snug text-muted-foreground">
+                {entry.designation}
+              </p>
+            ) : null}
+
+            <p className="mt-1.5 font-mono text-[0.65rem] uppercase tracking-[0.14em] text-primary/80">
+              {entry.departmentCode}
+            </p>
+          </div>
 
           {entry.researchInterests.length > 0 ? (
-            <p className="mt-4 text-[0.8rem] leading-relaxed text-muted-foreground">
-              {/* Three, then a count. A card that lists fifteen interests is not a card. */}
-              {entry.researchInterests.slice(0, 3).join(' · ')}
-              {entry.researchInterests.length > 3
-                ? ` +${entry.researchInterests.length - 3}`
-                : ''}
-            </p>
+            <div className="mt-6 h-[5.5rem] border-t border-hairline/50 pt-4 flex flex-col justify-start">
+              <p className="font-mono text-[0.6rem] uppercase tracking-[0.15em] text-muted-foreground/80 mb-1 shrink-0">
+                Research Focus
+              </p>
+              <p className="text-[0.8rem] leading-[1.4] text-muted-foreground">
+                {entry.researchInterests.slice(0, 3).join(' · ')}
+                {entry.researchInterests.length > 3
+                  ? ` +${entry.researchInterests.length - 3}`
+                  : ''}
+              </p>
+            </div>
           ) : null}
         </Link>
       </motion.div>

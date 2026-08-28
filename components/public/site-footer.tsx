@@ -19,7 +19,7 @@ export async function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-hairline bg-surface-sunken">
       <div className="px-gutter py-12">
-        <div className="mx-auto grid max-w-5xl gap-8 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-3">
           <div>
             <p className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">
               Faculty Portal
@@ -57,6 +57,17 @@ export async function SiteFooter() {
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div>
+            <p className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">
+              Contact
+            </p>
+            <p className="mt-3 text-[0.85rem] leading-relaxed text-muted-foreground">
+              Manipal University Jaipur<br />
+              Dehmi Kalan, Jaipur<br />
+              Rajasthan 303007
+            </p>
           </div>
         </div>
       </div>

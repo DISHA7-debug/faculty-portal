@@ -354,4 +354,8 @@
   .measure {
     max-width: var(--measure);
   }
+
+  .min-h-hero {
+    min-height: calc(100dvh - 3.75rem);
+  }
 }
