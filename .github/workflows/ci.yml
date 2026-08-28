@@ -23,11 +23,26 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
       NEXT_TELEMETRY_DISABLED: '1'
-      # Build-time only. `next build` never connects to a database — it just needs the
-      # variable to parse so Prisma can generate the client. Real credentials live in
-      # the VPS .env and are never needed by CI.
+      # Next.js *does* connect to the database during build to statically pre-render
+      # public pages (like the home page and department pages). This dummy DB ensures
+      # the build doesn't fail on CI.
       DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
 
     steps:
@@ -48,6 +63,9 @@ jobs:
       # and it is gitignored.
       - name: Generate Prisma client
         run: npx prisma generate
+
+      - name: Initialize dummy database schema for static rendering
+        run: npx prisma db push --accept-data-loss
 
       - name: Typecheck
         run: npm run typecheck
