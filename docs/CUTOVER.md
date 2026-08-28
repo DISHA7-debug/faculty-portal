@@ -25,6 +25,63 @@ in particular is on the critical path for anything that sends email.
 
 ---
 
+## 0.5 Database target: Neon vs VPS Postgres
+
+Two options exist for where `DATABASE_URL` points in production. Switching between them
+is **a connection-string change, not a code or schema change** — both `migrate` and `app`
+in `docker-compose.prod.yml` just read `DATABASE_URL` from the environment.
+
+| | **Neon (current deploy target)** | **VPS Postgres** |
+|---|---|---|
+| Cost | Free tier | Included in the VPS you're already paying for |
+| Availability | Scales to zero after idle — a cold-start delay on the first request after a quiet period | Always-on, matches the "everything always-on" guarantee this stack states elsewhere |
+| Where it lives | `docker-compose.prod.yml` has **no** `postgres` service; `migrate` and `app` both use `NEON_DATABASE_URL` (pooled, `-pooler` host) as `DATABASE_URL` | A `postgres` service in `docker-compose.prod.yml`, with `pgdata` volume, `pg_isready` healthcheck, and `depends_on: condition: service_healthy` on `migrate`/`app` — removed from the current file but recoverable from git history |
+| Backups | `deploy/backup.sh` runs on the VPS host and `pg_dump`s `NEON_DATABASE_URL` directly (no container to `docker exec` into anymore) — see "Backups" below | The old `docker exec faculty_postgres pg_dump ...` still works, but only while the VPS Postgres path is what's live |
+| Rotating the DB credential | Reset the role's password in the Neon console, update `NEON_DATABASE_URL` | Regenerate `POSTGRES_PASSWORD`, update `.env`, recreate the volume or `ALTER USER ... PASSWORD` (§6) |
+
+**Revisit at real launch.** Neon's scale-to-zero directly conflicts with the "Everything
+always-on" line at the top of `docker-compose.prod.yml` and with the health-check /
+uptime-monitoring expectations in §8 — a monitor polling `/api/health` on a schedule will
+incidentally keep it warm, but that's a side effect, not a guarantee. Once this is a scaled
+production launch rather than an initial deploy, move `DATABASE_URL` to the VPS Postgres
+path (or a paid always-on Neon tier) instead of relying on the free tier staying awake.
+
+**Prisma + PgBouncer note:** Neon's pooled (`-pooler`) endpoint is PgBouncer in transaction
+mode, which breaks Prisma's prepared-statement caching under concurrent traffic
+("prepared statement already exists" errors). `NEON_DATABASE_URL` carries
+`pgbouncer=true` for this reason, confirmed working with `prisma migrate status`/`deploy`
+alongside `sslmode=require&channel_binding=require`. That flag is Prisma-specific, not a
+real libpq parameter — anything using `NEON_DATABASE_URL` directly with `psql`/`pg_dump`
+(e.g. the backup script below) must strip it first, or the connection is rejected
+outright with `invalid connection option "pgbouncer"`.
+
+**Backups.** Two independent mechanisms, deliberately redundant:
+
+- **`deploy/backup.sh` (primary).** Runs on the VPS host via cron, `pg_dump`s
+  `NEON_DATABASE_URL` (with `pgbouncer=true` stripped) straight over the network, gzips,
+  GPG-encrypts, and ships to R2 — same shape as before, just no `docker exec` into a
+  `postgres` container that no longer exists. It dumps inside a `postgres:18-alpine`
+  container rather than via a host-installed `pg_dump`, because `pg_dump` refuses to
+  dump a server major version newer than itself: **Neon currently runs Postgres 18**,
+  not the 16 this repo's dev image and the VPS-Postgres alternative use, and a
+  version-16 client cannot touch it. Confirmed working end-to-end against the live Neon
+  database while wiring this up. If Neon's Postgres major version ever changes, bump the
+  tag in the script.
+- **Neon PITR/branching (secondary).** Automatic, needs no script, but **the free tier's
+  history-retention window is short (on the order of ~24 hours as of writing) — check
+  the current value on the Neon dashboard before relying on it.** That is materially
+  worse than the 30-day retention `backup.sh` already gives you. Treat PITR as a
+  fast-recovery convenience for "I broke something an hour ago," not as the real backup;
+  `backup.sh`'s 30-day R2 archive is what satisfies "restore last night's backup"
+  (§7, check 11) and the audit/data-loss posture in `CLAUDE.md` §1.
+
+**Launch-time gap:** if the college ends up staying on Neon's free tier past initial
+deploy rather than moving to VPS Postgres (§0.5) or a paid Neon tier, the short PITR
+window means `backup.sh`'s nightly cron is not optional — confirm it's actually installed
+and running on the VPS before treating any real faculty data as durable.
+
+---
+
 ## 1. Environment variables
 
 Set these in `.env` **on the server**. Never commit them.
@@ -42,7 +99,8 @@ Set these in `.env` **on the server**. Never commit them.
 | `SMTP_USER` / `SMTP_PASSWORD` | empty | SES SMTP credentials |
 | `R2_PUBLIC_URL` | `https://cdn.example.invalid` | `https://cdn.<domain>` |
 | `R2_ENDPOINT` | `ACCOUNT_ID...` | real R2 endpoint |
-| `POSTGRES_PASSWORD` | `devpassword` | a generated password |
+| `NEON_DATABASE_URL` | unset | Neon pooled connection string — only if on the Neon path (§0.5) |
+| `POSTGRES_PASSWORD` | `devpassword` | a generated password — only if on the VPS Postgres path (§0.5); irrelevant if serving `DATABASE_URL` from Neon |
 | `NODE_ENV` | `development` | `production` |
 
 `CADDY_TLS` takes an email because Caddy's `tls` directive accepts either `internal`
@@ -151,8 +209,9 @@ Cutover is also the handover boundary (PROJECT_PLAN §9: the college must own th
 graduation).
 
 - `AUTH_SECRET` — `openssl rand -base64 32`
-- `POSTGRES_PASSWORD` — regenerate, update `.env`, recreate the postgres volume or
-  `ALTER USER ... PASSWORD`
+- DB credential (§0.5) — on Neon, reset the role's password in the Neon console and
+  update `NEON_DATABASE_URL`; on VPS Postgres, regenerate `POSTGRES_PASSWORD`, update
+  `.env`, and recreate the postgres volume or `ALTER USER ... PASSWORD`
 - R2 access keys — new pair, revoke the old
 - SES SMTP credentials — new pair
 - `BACKUP_PASSPHRASE` — new value, and **verify a restore with it** before discarding

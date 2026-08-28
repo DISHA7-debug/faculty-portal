@@ -1,8 +1,13 @@
 # Separate project name from the dev stack — see the note in docker-compose.yml.
 name: faculty-prod
 
-# Production stack. Everything always-on.
-# `restart: unless-stopped` is what guarantees the backend never "goes to sleep".
+# Production stack. App, Redis, and Caddy are always-on via `restart: unless-stopped`.
+#
+# The database is Neon (external, managed Postgres) — not a service in this file.
+# `DATABASE_URL` is `NEON_DATABASE_URL` from `.env`, the pooled (`-pooler`) connection
+# string. See docs/CUTOVER.md "Database target" for why, and for the VPS-Postgres
+# alternative if Neon's free-tier idle-sleep ever conflicts with the always-on
+# requirement above.
 #
 # Runs with no public domain by default: SITE_ADDRESS falls back to `localhost` and
 # Caddy issues a certificate from its own internal CA. Point it at the real hostname
@@ -23,17 +28,18 @@ services:
     env_file: .env
     environment:
       # Overrides whatever .env says. `environment` beats `env_file` in compose, and
-      # .env is written for host-side development where Postgres is on localhost.
-      # Inside the compose network the host is the service name — without this override
-      # the container resolves `localhost` to itself and the migration fails to connect.
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public&connection_limit=15
-    depends_on:
-      postgres:
-        condition: service_healthy
+      # .env's bare DATABASE_URL is written for host-side dev (local Postgres on
+      # localhost). Migrations run against Neon, so this points at NEON_DATABASE_URL
+      # instead — without this override the migrator would try to reach a local
+      # Postgres that doesn't exist in this stack.
+      DATABASE_URL: ${NEON_DATABASE_URL}
+    # No depends_on: Neon isn't a compose service, so there's nothing local to wait on.
     # Explicitly not restarted: this is a task, not a service. A restart loop here
     # would hammer the database and mask a genuinely failing migration.
     restart: "no"
-    networks: [internal]
+    # `web`, not `internal`: this container needs outbound internet access to reach
+    # Neon's host, and `internal` is a Docker `internal: true` network with no egress.
+    networks: [web]
 
   app:
     build:
@@ -44,7 +50,7 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      # These three override .env deliberately — see the note on the migrate service.
+      # These override .env deliberately — see the note on the migrate service.
       #
       # NODE_ENV is the important one: .env ships NODE_ENV=development for host-side
       # work, and env_file takes precedence over the Dockerfile's ENV. Without this
@@ -52,11 +58,9 @@ services:
       # no production optimisations, and lib/env.ts skipping every production
       # safety assertion, silently.
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public&connection_limit=15
+      DATABASE_URL: ${NEON_DATABASE_URL}
       REDIS_URL: redis://redis:6379
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_started
       migrate:
@@ -69,26 +73,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    # `web` for Neon egress (and to be reachable from caddy's reverse_proxy), `internal`
+    # for redis.
     networks: [web, internal]
-
-  postgres:
-    image: postgres:16-alpine
-    container_name: faculty_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./deploy/backup.sh:/usr/local/bin/backup.sh:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    # NOT exposed to the host. Only reachable on the internal network.
-    networks: [internal]
 
   redis:
     image: redis:7-alpine
@@ -122,7 +109,6 @@ services:
     networks: [web]
 
 volumes:
-  pgdata:
   caddy_data:
   caddy_config:
 
