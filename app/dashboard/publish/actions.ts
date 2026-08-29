@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { assertCanPublishProfile } from '@/lib/auth/rbac';
+import { assertOwnsProfile } from '@/lib/auth/ownership';
 import { ForbiddenError, requireSession } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 
@@ -94,10 +95,12 @@ export async function setVisibilityAction(
 
   const profile = await db.profile.findUnique({
     where: { id: session.profileId },
-    select: { id: true, slug: true, isPubliclyListed: true },
+    select: { id: true, slug: true, departmentId: true, isPubliclyListed: true },
   });
 
   if (!profile) return { ok: false, error: 'Profile not found.' };
+
+  await assertOwnsProfile(profile, session);
 
   await db.profile.update({
     where: { id: profile.id },
