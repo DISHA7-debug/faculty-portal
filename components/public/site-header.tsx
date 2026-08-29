@@ -24,7 +24,7 @@ export function SiteHeader() {
               width={220}
               height={50}
               priority
-              className="h-10 sm:h-12 lg:h-14 w-auto object-contain mix-blend-multiply dark:mix-blend-normal"
+              className="h-10 sm:h-12 lg:h-14 w-auto object-contain"
             />
             <span className="font-mono text-[0.75rem] uppercase tracking-[0.18em] text-muted-foreground border-l border-hairline pl-3.5 hidden sm:inline-block">
               Faculty Portal
@@ -56,7 +56,7 @@ export function SiteHeader() {
                 width={150}
                 height={45}
                 priority
-                className="h-8 sm:h-10 w-auto object-contain dark:hidden mix-blend-multiply"
+                className="h-8 sm:h-10 w-auto object-contain dark:hidden"
               />
               <Image
                 src="/images/sdc-logo-dark.png"
