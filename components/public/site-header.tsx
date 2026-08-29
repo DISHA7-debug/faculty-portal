@@ -24,7 +24,7 @@ export function SiteHeader() {
               width={220}
               height={50}
               priority
-              className="h-10 sm:h-12 lg:h-14 w-auto object-contain"
+              className="h-10 sm:h-12 lg:h-14 w-auto object-contain mix-blend-multiply dark:mix-blend-normal"
             />
             <span className="font-mono text-[0.75rem] uppercase tracking-[0.18em] text-muted-foreground border-l border-hairline pl-3.5 hidden sm:inline-block">
               Faculty Portal
@@ -53,18 +53,18 @@ export function SiteHeader() {
               <Image
                 src="/images/sdc-logo-light.png"
                 alt="SDC - CSE Manipal University Jaipur"
-                width={180}
-                height={55}
+                width={150}
+                height={45}
                 priority
-                className="h-10 sm:h-12 lg:h-[3.25rem] w-auto object-contain dark:hidden"
+                className="h-8 sm:h-10 w-auto object-contain dark:hidden mix-blend-multiply"
               />
               <Image
                 src="/images/sdc-logo-dark.png"
                 alt="SDC - CSE Manipal University Jaipur"
-                width={180}
-                height={55}
+                width={150}
+                height={45}
                 priority
-                className="h-10 sm:h-12 lg:h-[3.25rem] w-auto object-contain hidden dark:block"
+                className="h-8 sm:h-10 w-auto object-contain hidden dark:block"
               />
             </div>
           </nav>

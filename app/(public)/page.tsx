@@ -65,7 +65,7 @@ export default async function Home() {
             </label>
             <div className="relative flex items-center">
               <svg
-                className="absolute left-5 size-5 text-muted-foreground/60 pointer-events-none z-10"
+                className="absolute left-4 w-5 h-5 text-muted-foreground/60 pointer-events-none z-10"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -78,7 +78,7 @@ export default async function Home() {
                 name="q"
                 type="search"
                 placeholder="Search by name, discipline, or department..."
-                className="h-14 w-full rounded-full border border-border bg-surface-raised pl-14 pr-32 text-[0.95rem] outline-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-xs"
+                className="h-14 w-full rounded-full border border-border bg-surface-raised pl-12 pr-32 text-[0.95rem] outline-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-xs"
               />
               <div className="absolute right-1.5 top-1.5 bottom-1.5">
                 <button
