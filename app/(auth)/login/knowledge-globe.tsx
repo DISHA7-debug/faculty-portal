@@ -469,50 +469,36 @@ function KnowledgeNetwork() {
 // ============================================================
 
 function BackgroundParticles() {
-  const particles =
-    useMemo(() => {
-      const result: [
-        number,
-        number,
-        number
-      ][] = [];
+  const particles = useMemo(() => {
+    const result: Array<{ position: [number, number, number]; size: number }> = [];
 
-      for (let i = 0; i < 180; i++) {
-        result.push([
-          (Math.random() - 0.5) * 10,
-          (Math.random() - 0.5) * 8,
-          (Math.random() - 0.5) * 5,
-        ]);
-      }
+    for (let i = 0; i < 180; i++) {
+      const p1 = Math.abs(Math.sin(i * 12.9898 + 78.233));
+      const p2 = Math.abs(Math.sin(i * 37.719 + 11.233));
+      const p3 = Math.abs(Math.sin(i * 59.131 + 43.811));
+      const p4 = Math.abs(Math.sin(i * 91.241 + 19.513));
 
-      return result;
-    }, []);
+      result.push({
+        position: [
+          (p1 - 0.5) * 10,
+          (p2 - 0.5) * 8,
+          (p3 - 0.5) * 5,
+        ],
+        size: 0.006 + p4 * 0.008,
+      });
+    }
+
+    return result;
+  }, []);
 
   return (
     <group>
-      {particles.map(
-        (position, index) => (
-          <mesh
-            key={index}
-            position={position}
-          >
-            <sphereGeometry
-              args={[
-                0.006 +
-                  Math.random() * 0.008,
-                6,
-                6,
-              ]}
-            />
-
-            <meshBasicMaterial
-              color="#d6b98c"
-              transparent
-              opacity={0.25}
-            />
-          </mesh>
-        )
-      )}
+      {particles.map((particle, index) => (
+        <mesh key={index} position={particle.position}>
+          <sphereGeometry args={[particle.size, 6, 6]} />
+          <meshBasicMaterial color="#d6b98c" transparent opacity={0.25} />
+        </mesh>
+      ))}
     </group>
   );
 }
