@@ -1,16 +1,9 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 /**
  * Header for every public page.
- *
- * Until now a visitor arriving at `/faculty/[slug]` from a search result had no way to
- * reach anything else — no directory, no department, no home. Search engines send people
- * to deep pages far more often than to a home page, so for most visitors that WAS the site.
- *
- * Deliberately not sticky: the profile page has its own sticky section rail, and two
- * stacked sticky bars eat a third of a phone screen and make the anchor-offset arithmetic
- * a guess.
  */
 export function SiteHeader() {
   return (
@@ -24,13 +17,14 @@ export function SiteHeader() {
             Faculty Portal
           </Link>
 
-          <nav aria-label="Site" className="flex items-center gap-2">
+          <nav aria-label="Site" className="flex items-center gap-3">
             <Link
               href="/faculty"
               className="rounded-md px-3 py-2 text-[0.85rem] transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               Directory
             </Link>
+            <ThemeToggle />
             <Button asChild variant="default" size="sm">
               <Link href="/login">
                 Faculty sign in

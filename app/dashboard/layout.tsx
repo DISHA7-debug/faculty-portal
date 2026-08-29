@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 import { AwaitingApproval } from '@/components/auth/awaiting-approval';
 import { SignOutButton } from '@/components/dashboard/sign-out-button';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { CompletenessMeter } from '@/components/dashboard/completeness-meter';
 import { DashboardNav } from '@/components/dashboard/dashboard-nav';
 import { PreviewRail } from '@/components/dashboard/preview-rail';
@@ -89,8 +90,9 @@ export default async function DashboardLayout({
                 how it goes unnoticed. This sits in the header block of the sidebar, which
                 is fully visible at every width — never scrolled, never collapsed.
               */}
-              <div className="mt-3">
+              <div className="mt-3 flex items-center justify-between gap-2">
                 <SignOutButton />
+                <ThemeToggle />
               </div>
             </div>
 

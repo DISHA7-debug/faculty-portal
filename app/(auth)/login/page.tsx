@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { getOptionalSession } from '@/lib/auth/session';
 import { safeNextPath } from '@/lib/safe-redirect';
 
+import { ThemeToggle } from '@/components/theme-toggle';
 import KnowledgeGlobe from './knowledge-globe';
 import { LoginForm } from './login-form';
 
@@ -35,11 +36,11 @@ export default async function LoginPage({
   const next = safeNextPath(params.next);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#080808] text-white">
+    <div className="flex min-h-dvh flex-col bg-background text-foreground">
       {/* =====================================================
           HEADER
       ====================================================== */}
-      <header className="absolute left-6 top-6 z-30 sm:left-10 sm:top-10">
+      <header className="absolute left-6 right-6 top-6 z-30 flex items-center justify-between sm:left-10 sm:right-10 sm:top-10">
         <Link
           href="/"
           className="group inline-flex items-center gap-2 text-[0.9rem] text-muted-foreground transition-colors hover:text-foreground"
@@ -52,6 +53,7 @@ export default async function LoginPage({
           </span>
           Return to directory
         </Link>
+        <ThemeToggle />
       </header>
 
       {/* =====================================================
@@ -61,7 +63,7 @@ export default async function LoginPage({
         {/* ===================================================
             LEFT — LOGIN
         ==================================================== */}
-        <section className="relative z-20 flex items-center bg-[#080808] px-6 py-28 sm:px-12 lg:px-20 xl:px-28">
+        <section className="relative z-20 flex items-center bg-background px-6 py-28 sm:px-12 lg:px-20 xl:px-28">
           <div className="w-full max-w-[430px]">
             {/* =================================================
                 BRAND
@@ -77,7 +79,7 @@ export default async function LoginPage({
               </div>
 
               {/* Heading */}
-              <h1 className="font-display text-[2.75rem] leading-[1.06] tracking-[-0.015em] text-white sm:text-5xl">
+              <h1 className="font-display text-[2.75rem] leading-[1.06] tracking-[-0.015em] text-foreground sm:text-5xl">
                 Sign in
               </h1>
 
