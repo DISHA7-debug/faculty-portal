@@ -223,10 +223,11 @@ model Profile {
   linkedinUrl       String?
 
   // State
-  isPublished    Boolean   @default(false)
-  publishedAt    DateTime? @db.Timestamptz(3)
-  completeness   Int       @default(0)  // 0-100, recomputed on save
-  viewCount      Int       @default(0)
+  isPublished      Boolean   @default(false)
+  isPubliclyListed Boolean   @default(true)
+  publishedAt      DateTime? @db.Timestamptz(3)
+  completeness     Int       @default(0)  // 0-100, recomputed on save
+  viewCount        Int       @default(0)
   createdAt      DateTime  @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime  @updatedAt @db.Timestamptz(3)
 

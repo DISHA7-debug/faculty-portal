@@ -77,7 +77,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     // A public directory of named individuals should not be feeding contact-scraping
     // datasets. Indexable, but not archived or snippet-expanded beyond the description.
-    robots: { index: true, follow: true, noarchive: true },
+    robots: { 
+      index: profile.isPubliclyListed, 
+      follow: profile.isPubliclyListed, 
+      noarchive: true 
+    },
   };
 }
 

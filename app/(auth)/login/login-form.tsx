@@ -58,6 +58,7 @@ export function LoginForm({ next }: { next: string }) {
             autoCapitalize="none"
             spellCheck={false}
             required
+            placeholder="e.g. first.last@jaipur.manipal.edu"
             defaultValue={state.email}
             className={inputClass}
           />

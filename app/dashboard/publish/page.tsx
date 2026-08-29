@@ -15,7 +15,7 @@ export default async function PublishPage() {
   const [profile, completeness] = await Promise.all([
     db.profile.findUnique({
       where: { id: session.profileId },
-      select: { slug: true, isPublished: true },
+      select: { slug: true, isPublished: true, isPubliclyListed: true },
     }),
     computeCompleteness(session.profileId),
   ]);
@@ -31,6 +31,7 @@ export default async function PublishPage() {
         <div className="mt-10">
           <PublishToggle
             initialPublished={profile?.isPublished ?? false}
+            initialListed={profile?.isPubliclyListed ?? true}
             canPublish={session.status === AccountStatus.ACTIVE}
             slug={profile?.slug ?? ''}
           />

@@ -63,38 +63,37 @@ export default async function VerifyPage({
 
   return (
     <>
-      <p className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">
-        Check your email
-      </p>
+      <div className="mb-6 text-center">
+        <div className="mx-auto mb-4 inline-flex h-8 items-center justify-center rounded-full border border-hairline bg-surface-raised px-4 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
+          Check your email
+        </div>
 
-      <h1 className="mt-5 text-[2.5rem] leading-[1.08] tracking-[-0.015em] sm:text-[3rem]">
-        Enter your code
-      </h1>
+        <h1 className="font-display text-[2.5rem] leading-[1.06] tracking-[-0.015em] sm:text-[2.75rem]">
+          Enter your code
+        </h1>
 
-      <p className="mt-5 text-[1.05rem] leading-relaxed">
-        We sent a 6-digit code to{' '}
-        <strong className="font-medium break-all">{email}</strong>.
-      </p>
-      <p className="measure mt-3 text-[0.95rem] leading-relaxed text-muted-foreground">
-        It expires in 10 minutes and can be used once.
-      </p>
-
-      <div className="mt-10">
-        <CodeForm email={email} next={next} />
+        <p className="mx-auto mt-3 max-w-[18rem] text-[0.9rem] leading-relaxed text-muted-foreground">
+          We sent a 6-digit code to{' '}
+          <strong className="font-medium break-all text-foreground">{email}</strong>.
+          <br className="mb-1" />
+          It expires in 10 minutes.
+        </p>
       </div>
 
-      <hr className="my-9 border-hairline" />
+      <CodeForm email={email} next={next} />
 
-      <p className="text-[0.875rem] leading-relaxed text-muted-foreground">
-        Wrong address?{' '}
-        <Link
-          href="/login"
-          className="rounded-sm font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
-          Start again
-        </Link>
-        .
-      </p>
+      <div className="mt-5 text-center">
+        <p className="text-[0.8rem] leading-relaxed text-muted-foreground opacity-80">
+          Wrong address?{' '}
+          <Link
+            href="/login"
+            className="rounded-sm font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            Start again
+          </Link>
+          .
+        </p>
+      </div>
     </>
   );
 }

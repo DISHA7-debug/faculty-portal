@@ -70,7 +70,7 @@ export const PER_PAGE = 24;
  * vanishes from its own page — a listing that outlives the profile it links to is both a
  * broken link and a disclosure.
  */
-const VISIBLE = Prisma.sql`p."isPublished" = true AND u."status" = ${AccountStatus.ACTIVE}::"AccountStatus"`;
+const VISIBLE = Prisma.sql`p."isPublished" = true AND p."isPubliclyListed" = true AND u."status" = ${AccountStatus.ACTIVE}::"AccountStatus"`;
 
 function filters(query: DirectoryQuery): Prisma.Sql[] {
   const conditions = [VISIBLE];

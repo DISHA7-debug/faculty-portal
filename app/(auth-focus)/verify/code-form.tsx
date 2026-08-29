@@ -73,8 +73,8 @@ export function CodeForm({ email, next }: { email: string; next: string }) {
   const [state, formAction] = useActionState<VerifyState, FormData>(verifyCodeAction, {});
 
   return (
-    <div className="space-y-8">
-      <form action={formAction} noValidate className="space-y-6">
+    <div className="space-y-6">
+      <form action={formAction} noValidate className="space-y-5">
         <input type="hidden" name="email" value={email} />
         <input type="hidden" name="next" value={next} />
 
@@ -102,8 +102,6 @@ export function CodeForm({ email, next }: { email: string; next: string }) {
               {...props}
               name="code"
               type="text"
-              /* `one-time-code` is what lets iOS and Android offer the code from the
-                 notification, which removes the transcription step entirely. */
               autoComplete="one-time-code"
               inputMode="numeric"
               pattern="[0-9 -]*"
@@ -119,8 +117,8 @@ export function CodeForm({ email, next }: { email: string; next: string }) {
         <SubmitButton />
       </form>
 
-      <div className="border-t border-hairline pt-6">
-        <p className="text-[0.875rem] text-muted-foreground">
+      <div className="border-t border-hairline pt-5">
+        <p className="text-[0.85rem] text-muted-foreground">
           {state.needsNewCode
             ? 'Request a fresh code to continue.'
             : 'Not arrived? Check spam, then request another.'}

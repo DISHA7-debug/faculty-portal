@@ -18,23 +18,27 @@ export default function AuthFocusLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <Providers>
-      {/*
-        The back link shares the content column's width and centring rather than sitting
-        at the page gutter, so the eye follows a single left edge down the screen instead
-        of jumping inward at the heading.
-      */}
-      <div className="min-h-dvh px-gutter py-10 sm:py-14">
-        <div className="mx-auto max-w-xl">
+      <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-background">
+        
+        {/* Subtle background glow effect using safe opacity classes */}
+        <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[30rem] w-[30rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary opacity-10 blur-3xl" aria-hidden="true" />
+
+        <header className="absolute left-6 top-6 sm:left-10 sm:top-10">
           <Link
             href="/"
-            className="inline-flex w-fit items-center gap-2 rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="inline-flex items-center gap-2 text-[0.9rem] text-muted-foreground transition-colors hover:text-foreground"
           >
             <span aria-hidden="true">&larr;</span>
             Faculty Portal
           </Link>
+        </header>
 
-          <main className="flex flex-col justify-center py-12 sm:py-16">{children}</main>
-        </div>
+        <main className="w-full max-w-md px-6 py-8">
+          {/* Glassmorphism Card */}
+          <div className="relative rounded-3xl border border-hairline bg-surface-sunken p-8 shadow-2xl backdrop-blur-md sm:p-10">
+            {children}
+          </div>
+        </main>
       </div>
     </Providers>
   );

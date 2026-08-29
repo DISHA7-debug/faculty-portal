@@ -76,6 +76,7 @@ export function SignupForm({
             autoCapitalize="none"
             spellCheck={false}
             required
+            placeholder={emailDomainHint ? `e.g. first.last${emailDomainHint}` : "e.g. first.last@jaipur.manipal.edu"}
             defaultValue={state.values?.email}
             className={inputClass}
           />

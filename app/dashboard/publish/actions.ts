@@ -82,3 +82,41 @@ export async function setPublishedAction(
 
   return { ok: true, isPublished };
 }
+
+export type VisibilityResult =
+  | { ok: true; isPubliclyListed: boolean }
+  | { ok: false; error: string };
+
+export async function setVisibilityAction(
+  isPubliclyListed: boolean,
+): Promise<VisibilityResult> {
+  const session = await requireSession();
+
+  const profile = await db.profile.findUnique({
+    where: { id: session.profileId },
+    select: { id: true, slug: true, isPubliclyListed: true },
+  });
+
+  if (!profile) return { ok: false, error: 'Profile not found.' };
+
+  await db.profile.update({
+    where: { id: profile.id },
+    data: { isPubliclyListed },
+  });
+
+  await db.auditLog.create({
+    data: {
+      userId: session.userId,
+      action: isPubliclyListed ? 'profile.list' : 'profile.unlist',
+      entity: 'Profile',
+      entityId: profile.id,
+      metadata: { from: profile.isPubliclyListed, to: isPubliclyListed },
+    },
+  });
+
+  revalidatePath('/dashboard/publish');
+  revalidatePath(`/faculty/${profile.slug}`);
+  revalidatePath('/'); // to update the directory
+
+  return { ok: true, isPubliclyListed };
+}

@@ -179,6 +179,7 @@ const PROFILE_SELECT = Prisma.validator<Prisma.ProfileSelect>()({
   researcherId: true,
   cvKey: true,
   publishedAt: true,
+  isPubliclyListed: true,
   updatedAt: true,
   department: { select: { name: true, slug: true, code: true } },
   user: { select: { email: true } },
