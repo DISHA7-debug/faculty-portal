@@ -56,14 +56,17 @@ export function AddCustomSectionDialog() {
 
     startTransition(async () => {
       const res = await createCustomSectionAction(title, columns);
-      if (res.ok && res.data) {
+      if (!res.ok) {
+        toast.error(res.error || 'Failed to create custom section.');
+        return;
+      }
+
+      if (res.data) {
         toast.success(`Custom section "${title}" created!`);
         setOpen(false);
         setTitle('');
         setColumns(['Title', 'Number / Detail', 'Year']);
         router.push(`/dashboard/custom/${res.data.slug}`);
-      } else {
-        toast.error(res.error || 'Failed to create custom section.');
       }
     });
   };
