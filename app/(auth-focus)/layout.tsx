@@ -24,7 +24,7 @@ export default function AuthFocusLayout({
         {/* Subtle background glow effect using safe opacity classes */}
         <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[30rem] w-[30rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary opacity-10 blur-3xl" aria-hidden="true" />
 
-        <header className="absolute left-6 right-6 top-6 flex items-center justify-between sm:left-10 sm:right-10 sm:top-10">
+        <header className="absolute left-6 right-6 top-6 flex items-center justify-between sm:left-10 sm:right-12 sm:top-10 lg:right-14">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-[0.9rem] text-muted-foreground transition-colors hover:text-foreground"

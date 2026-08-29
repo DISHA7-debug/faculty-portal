@@ -40,7 +40,7 @@ export default async function LoginPage({
       {/* =====================================================
           HEADER
       ====================================================== */}
-      <header className="absolute left-6 right-6 top-6 z-30 flex items-center justify-between sm:left-10 sm:right-10 sm:top-10">
+      <header className="absolute left-6 right-6 top-6 z-30 flex items-center justify-between sm:left-10 sm:right-12 sm:top-10 lg:right-14">
         <Link
           href="/"
           className="group inline-flex items-center gap-2 text-[0.9rem] text-muted-foreground transition-colors hover:text-foreground"
