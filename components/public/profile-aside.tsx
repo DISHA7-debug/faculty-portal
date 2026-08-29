@@ -112,9 +112,17 @@ export function ProfileAside({ profile }: { profile: PublicProfile }) {
         ) : null}
 
         {contact.mobile ? (
-          <Row label="Phone">
+          <Row label="Mobile">
             <ExternalLink href={`tel:${contact.mobile.replace(/\s/g, '')}`}>
               {contact.mobile}
+            </ExternalLink>
+          </Row>
+        ) : null}
+
+        {contact.phoneExt ? (
+          <Row label="Phone / Ext">
+            <ExternalLink href={`tel:${contact.phoneExt.replace(/\s/g, '')}`}>
+              {contact.phoneExt}
             </ExternalLink>
           </Row>
         ) : null}

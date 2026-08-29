@@ -203,10 +203,12 @@ model Profile {
   photoBlurhash String?
 
   // Contact
-  officeNo    String?
-  mobile      String?
-  altEmail    String?
-  showMobile  Boolean @default(false)  // field-level privacy
+  officeNo     String?
+  mobile       String?
+  phoneExt     String?
+  altEmail     String?
+  showMobile   Boolean @default(false)  // field-level privacy
+  showPhoneExt Boolean @default(true)
   showAltEmail Boolean @default(true)
 
   // Narrative
@@ -242,8 +244,9 @@ model Profile {
   awards      Award[]
   courses     Course[]
   projects    ResearchProject[]
-  guidances   Guidance[]
-  memberships Membership[]
+  guidances       Guidance[]
+  memberships     Membership[]
+  customSections  CustomSection[]
 
   @@index([departmentId, isPublished])
   @@index([isPublished, fullName])
@@ -431,4 +434,35 @@ model FileObject {
   createdAt    DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([ownerUserId])
+}
+
+// ============ CUSTOM SECTIONS ============
+
+model CustomSection {
+  id          String   @id @default(cuid())
+  profileId   String
+  title       String
+  slug        String
+  columns     String[]
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  profile     Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  items       CustomItem[]
+
+  @@unique([profileId, slug])
+  @@index([profileId, sortOrder])
+}
+
+model CustomItem {
+  id              String        @id @default(cuid())
+  customSectionId String
+  values          Json
+  sortOrder       Int           @default(0)
+  createdAt       DateTime      @default(now()) @db.Timestamptz(3)
+
+  customSection   CustomSection @relation(fields: [customSectionId], references: [id], onDelete: Cascade)
+
+  @@index([customSectionId, sortOrder])
 }

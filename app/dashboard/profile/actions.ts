@@ -85,6 +85,7 @@ export async function updateProfileAction(
     designation: String(formData.get('designation') ?? ''),
     officeNo: String(formData.get('officeNo') ?? ''),
     mobile: String(formData.get('mobile') ?? ''),
+    phoneExt: String(formData.get('phoneExt') ?? ''),
     altEmail: String(formData.get('altEmail') ?? ''),
     about: String(formData.get('about') ?? ''),
     personalPageUrl: String(formData.get('personalPageUrl') ?? ''),
@@ -95,6 +96,7 @@ export async function updateProfileAction(
     researcherId: String(formData.get('researcherId') ?? ''),
     // Unchecked checkboxes are simply absent from FormData.
     showMobile: formData.get('showMobile') === 'on',
+    showPhoneExt: formData.get('showPhoneExt') === 'on',
     showAltEmail: formData.get('showAltEmail') === 'on',
   });
 
@@ -116,6 +118,7 @@ export async function updateProfileAction(
       designation: d.designation,
       officeNo: d.officeNo,
       mobile: d.mobile,
+      phoneExt: d.phoneExt,
       altEmail: d.altEmail,
       about: d.about,
       personalPageUrl: d.personalPageUrl,
@@ -125,6 +128,7 @@ export async function updateProfileAction(
       googleScholarId: d.googleScholarId,
       researcherId: d.researcherId,
       showMobile: d.showMobile,
+      showPhoneExt: d.showPhoneExt,
       showAltEmail: d.showAltEmail,
     },
   });
@@ -170,4 +174,55 @@ export async function setResearchInterestsAction(
   revalidatePath('/dashboard/profile');
 
   return { ok: true, interests: unique };
+}
+
+export type SlugResult =
+  | { ok: true; slug: string }
+  | { ok: false; error: string };
+
+const RESERVED_SLUGS = new Set([
+  'admin', 'api', 'dashboard', 'faculty', 'departments', 'login', 'signup',
+  'verify', 'reset-password', 'logout', 'search', 'about', 'settings', '_next',
+]);
+
+export async function updateSlugAction(newSlug: string): Promise<SlugResult> {
+  const session = await requireSession();
+  await assertOwnsProfileRow({ profileId: session.profileId }, session);
+
+  const clean = newSlug
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  if (clean.length < 3) {
+    return { ok: false, error: 'URL handle must be at least 3 characters long.' };
+  }
+
+  if (RESERVED_SLUGS.has(clean)) {
+    return { ok: false, error: 'That URL handle is reserved by the system.' };
+  }
+
+  const existing = await db.profile.findFirst({
+    where: {
+      slug: clean,
+      NOT: { id: session.profileId },
+    },
+    select: { id: true },
+  });
+
+  if (existing) {
+    return { ok: false, error: 'That URL handle is already taken by another faculty member.' };
+  }
+
+  await db.profile.update({
+    where: { id: session.profileId },
+    data: { slug: clean },
+  });
+
+  revalidatePath('/dashboard/profile');
+  revalidatePath('/dashboard');
+  revalidatePath('/dashboard/publish');
+
+  return { ok: true, slug: clean };
 }

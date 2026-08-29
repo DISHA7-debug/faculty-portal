@@ -50,6 +50,8 @@ export const profileUpdateSchema = z
       { message: 'Enter a valid phone number, or leave it blank.' },
     ),
 
+    phoneExt: optionalText(60, 'Phone with extension'),
+
     altEmail: optionalText(254, 'Alternative email').refine(
       (value) => value === null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
       { message: 'Enter a valid email address, or leave it blank.' },
@@ -84,6 +86,7 @@ export const profileUpdateSchema = z
 
     /** Field-level privacy. Defaults match the schema: mobile hidden, alt email shown. */
     showMobile: z.boolean(),
+    showPhoneExt: z.boolean(),
     showAltEmail: z.boolean(),
   })
   .strict();

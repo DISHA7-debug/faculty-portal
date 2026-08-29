@@ -27,6 +27,7 @@ export type ProfileValues = {
   designation: string;
   officeNo: string;
   mobile: string;
+  phoneExt: string;
   altEmail: string;
   about: string;
   personalPageUrl: string;
@@ -36,6 +37,7 @@ export type ProfileValues = {
   googleScholarId: string;
   researcherId: string;
   showMobile: boolean;
+  showPhoneExt: boolean;
   showAltEmail: boolean;
 };
 
@@ -155,13 +157,23 @@ export function PersonalDetailsForm({ initial }: { initial: ProfileValues }) {
         <legend className="text-[1.1rem] font-medium">Contact</legend>
         <div className="grid gap-6 sm:grid-cols-2">
           {text('mobile', 'Mobile number', { type: 'tel', placeholder: '+91 90000 00000' })}
-          {text('altEmail', 'Alternative email', { type: 'email' })}
+          {text('phoneExt', 'Phone / Extension', { placeholder: '+91 141 3999100 ext. 214' })}
+          <div className="sm:col-span-2">
+            {text('altEmail', 'Alternative email', { type: 'email' })}
+          </div>
         </div>
 
         <VisibilityToggle
           name="showMobile"
           defaultChecked={initial.showMobile}
           label="Show my mobile number on my public profile"
+          onDescription="anyone visiting your page can see it."
+          offDescription="it is stored but never shown publicly."
+        />
+        <VisibilityToggle
+          name="showPhoneExt"
+          defaultChecked={initial.showPhoneExt}
+          label="Show my phone / extension number on my public profile"
           onDescription="anyone visiting your page can see it."
           offDescription="it is stored but never shown publicly."
         />

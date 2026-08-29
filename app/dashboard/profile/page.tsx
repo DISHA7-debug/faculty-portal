@@ -4,6 +4,7 @@ import { CvUpload } from '@/components/dashboard/cv-upload';
 import { PersonalDetailsForm } from '@/components/dashboard/personal-details-form';
 import { PhotoUpload } from '@/components/dashboard/photo-upload';
 import { TagInput } from '@/components/dashboard/tag-input';
+import { SlugEditor } from '@/components/dashboard/slug-editor';
 import { requireSessionOrRedirect } from '@/lib/auth/session';
 import { db } from '@/lib/db';
 import { getPublicUrl } from '@/lib/storage';
@@ -18,9 +19,10 @@ export default async function ProfileFilesPage() {
     where: { id: session.profileId },
     select: {
       photoKey: true, cvKey: true, fullName: true, designation: true, officeNo: true,
-      mobile: true, altEmail: true, about: true, personalPageUrl: true, linkedinUrl: true,
+      mobile: true, phoneExt: true, altEmail: true, about: true, personalPageUrl: true, linkedinUrl: true,
       orcid: true, scopusId: true, googleScholarId: true, researcherId: true,
-      showMobile: true, showAltEmail: true, researchInterests: true,
+      showMobile: true, showPhoneExt: true, showAltEmail: true, researchInterests: true,
+      slug: true, isPublished: true,
     },
   });
 
@@ -35,6 +37,11 @@ export default async function ProfileFilesPage() {
         </h1>
 
         <div className="mt-12 space-y-14">
+          <SlugEditor
+            initialSlug={profile?.slug ?? 'faculty-profile'}
+            isPublished={profile?.isPublished ?? false}
+          />
+          <hr className="border-hairline" />
           <PhotoUpload currentUrl={profile?.photoKey ? getPublicUrl(profile.photoKey) : null} />
           <hr className="border-hairline" />
           <CvUpload currentUrl={profile?.cvKey ? getPublicUrl(profile.cvKey) : null} />
@@ -47,6 +54,7 @@ export default async function ProfileFilesPage() {
               designation: profile?.designation ?? '',
               officeNo: profile?.officeNo ?? '',
               mobile: profile?.mobile ?? '',
+              phoneExt: profile?.phoneExt ?? '',
               altEmail: profile?.altEmail ?? '',
               about: profile?.about ?? '',
               personalPageUrl: profile?.personalPageUrl ?? '',
@@ -56,6 +64,7 @@ export default async function ProfileFilesPage() {
               googleScholarId: profile?.googleScholarId ?? '',
               researcherId: profile?.researcherId ?? '',
               showMobile: profile?.showMobile ?? false,
+              showPhoneExt: profile?.showPhoneExt ?? true,
               showAltEmail: profile?.showAltEmail ?? true,
             }}
           />

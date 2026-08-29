@@ -1,5 +1,6 @@
 import { AccountStatus } from '@prisma/client';
 import { headers } from 'next/headers';
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { AwaitingApproval } from '@/components/auth/awaiting-approval';
@@ -38,7 +39,7 @@ export default async function DashboardLayout({
     return <Providers nonce={nonce}>{children}</Providers>;
   }
 
-  const [profile, department, completeness] = await Promise.all([
+  const [profile, department, completeness, customSections] = await Promise.all([
     db.profile.findUnique({
       where: { id: session.profileId },
       select: { fullName: true, designation: true, slug: true, isPublished: true },
@@ -48,6 +49,11 @@ export default async function DashboardLayout({
       select: { name: true },
     }),
     computeCompleteness(session.profileId),
+    db.customSection.findMany({
+      where: { profileId: session.profileId },
+      orderBy: { sortOrder: 'asc' },
+      select: { title: true, slug: true },
+    }),
   ]);
 
   const awaitingApproval = session.status === AccountStatus.PENDING_APPROVAL;
@@ -59,12 +65,21 @@ export default async function DashboardLayout({
         <aside className="border-b border-hairline bg-surface-sunken px-gutter py-6 lg:border-r lg:border-b-0 lg:py-8">
           <div className="lg:sticky lg:top-8 lg:space-y-8">
             <div>
-              <Link
-                href="/"
-                className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-              >
-                Faculty Portal
-              </Link>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <Link
+                  href="/"
+                  className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                >
+                  Faculty Portal
+                </Link>
+                <Image
+                  src="/images/sdc-logo-dark.png"
+                  alt="SDC Logo"
+                  width={100}
+                  height={30}
+                  className="h-7 w-auto object-contain dark:brightness-110 brightness-90"
+                />
+              </div>
               <p className="mt-3 text-[1.15rem] leading-snug font-display">
                 {profile?.fullName ?? 'Your profile'}
               </p>

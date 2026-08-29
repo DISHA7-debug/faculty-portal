@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -53,7 +54,17 @@ export default async function LoginPage({
           </span>
           Return to directory
         </Link>
-        <ThemeToggle />
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <Image
+            src="/images/sdc-logo-dark.png"
+            alt="SDC Logo"
+            width={100}
+            height={32}
+            priority
+            className="h-8 w-auto object-contain dark:brightness-110 brightness-90"
+          />
+        </div>
       </header>
 
       {/* =====================================================

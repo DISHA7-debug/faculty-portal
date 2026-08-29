@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { FacultyGrid } from '@/components/public/faculty-grid';
@@ -39,28 +40,32 @@ export default async function Home() {
   return (
     <main>
       {/* ── Hero ──────────────────────────────────────────────────────────────────── */}
-      <section className="relative flex min-h-hero flex-col items-center justify-center overflow-hidden border-b border-hairline px-gutter py-[3dvh] sm:py-[4dvh]">
-        <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center text-center">
-          <div className="mb-[2dvh] inline-flex items-center gap-2 rounded-full border border-hairline bg-surface-sunken px-3 py-1.5 font-mono text-[0.7rem] uppercase tracking-[0.15em] text-muted-foreground">
-            <span className="flex size-1.5 rounded-full bg-primary" />
-            Official Directory
-          </div>
-
-          <h1 className="max-w-[20ch] text-balance font-display text-[clamp(2.6rem,8vw,4.6rem)] leading-[0.95] tracking-[-0.02em] text-foreground">
-            The brilliant minds who <em className="pr-1 font-serif italic text-primary">inspire</em> and <em className="pr-1 font-serif italic text-primary">innovate</em> here.
+      <section className="relative flex min-h-[calc(100vh-4.5rem)] flex-col items-center justify-center overflow-hidden border-b border-hairline px-gutter py-8 sm:py-12">
+        <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-col items-center text-center">
+          <h1 className="max-w-3xl text-balance text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight text-foreground">
+            The brilliant minds who <em className="font-serif italic text-primary">inspire</em> and <em className="font-serif italic text-primary">innovate</em> here.
           </h1>
 
-          <p className="mt-[2dvh] max-w-[50ch] text-balance text-[0.95rem] leading-[1.5] text-muted-foreground sm:text-[1rem]">
-            Search the full faculty by name, department, or research focus. A single register for every scholar.
-          </p>
+          <div className="mt-6 sm:mt-8 flex flex-col items-center gap-3">
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-[0.875rem] font-semibold text-primary">
+              <span className="flex size-2 rounded-full bg-primary" />
+              <span>Dedicated Faculty URL:</span>
+              <code className="font-mono text-[0.8rem] font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded">
+                /faculty/your-name
+              </code>
+            </div>
+            <p className="max-w-xl text-[0.95rem] sm:text-[1.05rem] leading-relaxed text-muted-foreground">
+              Search our faculty directory or sign in to claim and customize your dedicated profile link.
+            </p>
+          </div>
 
-          <form method="get" action="/faculty" role="search" className="mt-[3dvh] w-full max-w-2xl relative">
+          <form method="get" action="/faculty" role="search" className="mt-8 w-full max-w-2xl relative">
             <label htmlFor="home-q" className="sr-only">
               Search faculty by name or research area
             </label>
             <div className="relative flex items-center">
               <svg
-                className="absolute left-5 size-5 text-muted-foreground/60"
+                className="absolute left-5 size-5 text-muted-foreground/60 pointer-events-none z-10"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -73,12 +78,12 @@ export default async function Home() {
                 name="q"
                 type="search"
                 placeholder="Search by name, discipline, or department..."
-                className="h-14 w-full rounded-full border border-border bg-surface-raised pl-13 pr-32 text-[1rem] outline-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+                className="h-14 w-full rounded-full border border-border bg-surface-raised pl-14 pr-32 text-[0.95rem] outline-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary shadow-xs"
               />
               <div className="absolute right-1.5 top-1.5 bottom-1.5">
                 <button
                   type="submit"
-                  className="h-full rounded-full bg-primary px-6 text-[0.9rem] font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-raised"
+                  className="h-full rounded-full bg-primary px-6 text-[0.875rem] font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-raised"
                 >
                   Search
                 </button>
@@ -86,24 +91,25 @@ export default async function Home() {
             </div>
           </form>
 
-          <div className="mt-[1.5dvh] flex flex-wrap items-center justify-center gap-2 text-[0.8rem]">
-            <span className="mr-2 font-mono text-[0.65rem] uppercase tracking-[0.1em] text-muted-foreground">Try:</span>
-            <span className="rounded-full border border-hairline bg-surface-sunken px-3 py-1 text-muted-foreground transition-colors hover:text-foreground">Machine Learning</span>
-            <span className="rounded-full border border-hairline bg-surface-sunken px-3 py-1 text-muted-foreground transition-colors hover:text-foreground">Molecular Biology</span>
-            <span className="rounded-full border border-hairline bg-surface-sunken px-3 py-1 text-muted-foreground transition-colors hover:text-foreground">Comparative Literature</span>
+          {/* Search Suggestions */}
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-[0.8rem]">
+            <span className="mr-1 font-mono text-[0.65rem] uppercase tracking-[0.1em] text-muted-foreground">Try:</span>
+            <span className="rounded-full border border-hairline bg-surface-sunken px-3 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground">Machine Learning</span>
+            <span className="rounded-full border border-hairline bg-surface-sunken px-3 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground">Molecular Biology</span>
+            <span className="rounded-full border border-hairline bg-surface-sunken px-3 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground">Comparative Literature</span>
           </div>
 
-
-          <div className="mt-[4dvh] flex flex-col items-center">
+          {/* Directory Stats & Claim URL CTA */}
+          <div className="mt-6 sm:mt-8 flex flex-col items-center gap-2.5">
             <div className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-muted-foreground/70">
               {total} SCHOLARS &nbsp;&bull;&nbsp; {departments.length} DEPARTMENTS
             </div>
             
             <Link 
               href="/login" 
-              className="mt-8 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-5 py-2.5 text-[0.85rem] font-medium text-primary transition-colors hover:bg-primary/20 hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-5 py-2 text-[0.875rem] font-medium text-primary transition-all hover:bg-primary/20 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <span>Faculty member? Sign in to manage your profile</span>
+              <span>Faculty member? Claim your unique profile URL</span>
               <span aria-hidden="true">&rarr;</span>
             </Link>
           </div>

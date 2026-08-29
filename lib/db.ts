@@ -15,6 +15,14 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+if (
+  process.env.NODE_ENV !== 'production' &&
+  globalForPrisma.prisma &&
+  !('customSection' in globalForPrisma.prisma)
+) {
+  globalForPrisma.prisma = undefined;
+}
+
 export const db =
   globalForPrisma.prisma ??
   new PrismaClient({

@@ -458,6 +458,48 @@ export function ProfileSections({
       {sections.map((id) => (
         <div key={id}>{render[id]()}</div>
       ))}
+
+      {profile.customSections?.map((cs) => {
+        if (!cs.items || cs.items.length === 0) return null;
+        return (
+          <section key={cs.id} id={`custom-${cs.slug}`} className="scroll-mt-20 py-12 sm:py-16">
+            <h2 className="font-display text-[1.75rem] leading-tight tracking-[-0.01em]">
+              {cs.title}
+            </h2>
+            <div className="mt-6 overflow-x-auto rounded-xl border border-hairline bg-background shadow-xs">
+              <table className="w-full text-left text-[0.85rem]">
+                <thead className="border-b border-hairline bg-surface-sunken font-mono text-[0.7rem] uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">#</th>
+                    {cs.columns.map((col) => (
+                      <th key={col} className="px-4 py-3 font-medium">
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-hairline">
+                  {cs.items.map((item, idx) => {
+                    const values = (item.values as Record<string, string>) || {};
+                    return (
+                      <tr key={item.id}>
+                        <td className="px-4 py-3 font-mono text-[0.75rem] text-muted-foreground">
+                          {idx + 1}
+                        </td>
+                        {cs.columns.map((col) => (
+                          <td key={col} className="px-4 py-3 text-foreground font-medium">
+                            {values[col] || '—'}
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }

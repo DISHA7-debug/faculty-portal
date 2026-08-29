@@ -152,6 +152,19 @@ const SECTIONS_SELECT = Prisma.validator<Prisma.ProfileSelect>()({
     orderBy: [{ sortOrder: 'asc' }],
     select: { id: true, body: true, membershipType: true, sinceYear: true },
   },
+  customSections: {
+    orderBy: [{ sortOrder: 'asc' }],
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      columns: true,
+      items: {
+        orderBy: [{ sortOrder: 'asc' }],
+        select: { id: true, values: true },
+      },
+    },
+  },
 });
 
 /**
@@ -187,8 +200,10 @@ const PROFILE_SELECT = Prisma.validator<Prisma.ProfileSelect>()({
   // Selected so the mapper can decide. They are stripped from PublicProfile by the Omit
   // below, so no component can reach a withheld number even by mistake.
   showMobile: true,
+  showPhoneExt: true,
   showAltEmail: true,
   mobile: true,
+  phoneExt: true,
   altEmail: true,
 
   ...SECTIONS_SELECT,
@@ -196,7 +211,7 @@ const PROFILE_SELECT = Prisma.validator<Prisma.ProfileSelect>()({
 
 type RawProfile = Prisma.ProfileGetPayload<{ select: typeof PROFILE_SELECT }>;
 
-type PrivateColumn = 'guidances' | 'user' | 'mobile' | 'altEmail' | 'showMobile' | 'showAltEmail';
+type PrivateColumn = 'guidances' | 'user' | 'mobile' | 'phoneExt' | 'altEmail' | 'showMobile' | 'showPhoneExt' | 'showAltEmail';
 
 export type PublicProfile = Omit<RawProfile, PrivateColumn> & {
   /** Already reduced to the chosen display form. The raw name does not survive this type. */
@@ -207,20 +222,16 @@ export type PublicProfile = Omit<RawProfile, PrivateColumn> & {
     email: string;
     /** Present only when the faculty member ticked the corresponding visibility box. */
     mobile: string | null;
+    phoneExt: string | null;
     altEmail: string | null;
   };
 };
 
 /**
- * Applies the two field-level privacy flags and the guidance name policy.
- *
- * Shared by the published page and the dashboard preview so that what a faculty member
- * previews is what a visitor gets — including the withholding. A preview that showed a
- * hidden mobile number "because it's your own page" would teach people the flag does not
- * work.
+ * Applies the field-level privacy flags and the guidance name policy.
  */
 function toPublicProfile(row: RawProfile): PublicProfile {
-  const { guidances, user, mobile, altEmail, showMobile, showAltEmail, ...rest } = row;
+  const { guidances, user, mobile, phoneExt, altEmail, showMobile, showPhoneExt, showAltEmail, ...rest } = row;
 
   return {
     ...rest,
@@ -231,6 +242,7 @@ function toPublicProfile(row: RawProfile): PublicProfile {
     contact: {
       email: user.email,
       mobile: showMobile ? mobile : null,
+      phoneExt: showPhoneExt ? phoneExt : null,
       altEmail: showAltEmail ? altEmail : null,
     },
   };
